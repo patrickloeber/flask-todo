@@ -1,3 +1,6 @@
+Simple Flask Todo App with SQLAlchemy and an SQLite database
+
+### Setup
 Create project with virtual environment
 
 ```console
