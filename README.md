@@ -35,7 +35,7 @@ $ export FLASK_ENV=development
 
 or on Windows
 ```console
-$ set FLASK_APP=hello.py
+$ set FLASK_APP=app.py
 $ set FLASK_ENV=development
 ```
 
