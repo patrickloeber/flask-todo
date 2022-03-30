@@ -1,50 +1,66 @@
+from sqlalchemy import create_engine, select
+from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 from flask import Flask, render_template, request, redirect, url_for
-from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 
 # /// = relative path, //// = absolute path
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
 
 
-class Todo(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(100))
-    complete = db.Column(db.Boolean)
+engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'], connect_args={"check_same_thread": False})
+
+Session = sessionmaker(bind = engine, future = True)
+Base = declarative_base(bind = engine)
+
+class Todo(Base):
+    __tablename__ = 'todo_list'
+    
+    id = Column(Integer, primary_key=True)
+    title = Column(String(100))
+    complete = Column(Boolean)
+
+    def __repr__(self):
+        return f"Todo(id={self.id!r}, title={self.title!r}, complete={self.complete!r})"
 
 
 @app.route("/")
 def home():
-    todo_list = Todo.query.all()
-    return render_template("base.html", todo_list=todo_list)
+    with Session() as session:
+        todo_list = session.execute(select(Todo)).scalars().all()
+        return render_template("base.html", todo_list=todo_list)
 
 
 @app.route("/add", methods=["POST"])
 def add():
     title = request.form.get("title")
-    new_todo = Todo(title=title, complete=False)
-    db.session.add(new_todo)
-    db.session.commit()
+    with Session() as session: 
+        new_todo = Todo(title=title, complete=False)
+        session.add(new_todo)
+        session.commit() 
     return redirect(url_for("home"))
 
 
 @app.route("/update/<int:todo_id>")
 def update(todo_id):
-    todo = Todo.query.filter_by(id=todo_id).first()
-    todo.complete = not todo.complete
-    db.session.commit()
+    with Session() as session: 
+        todo = session.execute(select(Todo).filter_by(id=todo_id)).scalar_one()
+        todo.complete = not todo.complete
+        session.commit()
     return redirect(url_for("home"))
 
 
 @app.route("/delete/<int:todo_id>")
 def delete(todo_id):
-    todo = Todo.query.filter_by(id=todo_id).first()
-    db.session.delete(todo)
-    db.session.commit()
+    with Session() as session: 
+        todo = session.execute(select(Todo).filter_by(id=todo_id)).scalar_one()
+        session.delete(todo)
+        session.commit()
     return redirect(url_for("home"))
 
 if __name__ == "__main__":
-    db.create_all()
+    Base.metadata.create_all(engine)
     app.run(debug=True)
