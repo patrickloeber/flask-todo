@@ -14,11 +14,23 @@
     <div style="margin-top: 50px;" class="ui container">
         <h1 class="ui center aligned header">To Do App</h1>
 
-        <form class="ui form" action="/add" method="post">
+        <form class="ui form" action="{{url_for('add')}}" method="post">
             <div class="field">
                 <label>Todo Title</label>
                 <input type="text" name="title" placeholder="Enter Todo..."><br>
             </div>
+                 {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                  <ul>
+                  {% for category, message in messages %}
+                   <li style="color: {{ category }};">
+                          <strong>{{ message }}</strong>
+                      </li>
+                  {% endfor %}
+                  </ul>
+                {% endif %}
+              {% endwith %}
+
             <button class="ui blue button" type="submit">Add</button>
         </form>
 
@@ -26,11 +38,11 @@
 
         {% for todo in todo_list %}
         <div class="ui segment">
-            <p class="ui big header">{{todo.id }} | {{ todo.title }}</p>
-
             {% if todo.complete == False %}
+            <p class="ui big header">{{todo.id }} | {{ todo.title }} - {{todo.created_at}}</p>
             <span class="ui gray label">Not Complete</span>
             {% else %}
+            <p class="ui big header"><s>{{todo.id }} | {{ todo.title }} - {{todo.created_at}}</s></p>
             <span class="ui green label">Completed</span>
             {% endif %}
 
